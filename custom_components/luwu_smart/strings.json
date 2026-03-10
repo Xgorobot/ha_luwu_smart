@@ -1,0 +1,48 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Luwu Smart Device",
+        "description": "Set up your Luwu Smart embodied intelligence device.",
+        "data": {
+          "host": "Host",
+          "port": "Port",
+          "name": "Device Name",
+          "token": "API Token (optional)"
+        },
+        "data_description": {
+          "host": "IP address or hostname of the device",
+          "port": "Port number (default: 8080)",
+          "name": "A friendly name for the device",
+          "token": "Authentication token if required"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate",
+        "description": "Please enter a new API token for {name}.",
+        "data": {
+          "token": "API Token"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the device. Please check the host and port.",
+      "invalid_auth": "Invalid authentication. Please check your API token.",
+      "unknown": "An unexpected error occurred."
+    },
+    "abort": {
+      "already_configured": "This device is already configured.",
+      "reauth_successful": "Re-authentication was successful."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Luwu Smart Options",
+        "data": {
+          "scan_interval": "Update interval (seconds)"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,99 @@
+send_command:
+  name: Send Command
+  description: Send a custom command to the Luwu Smart device.
+  fields:
+    device_id:
+      name: Device ID
+      description: The device ID to send the command to. If not specified, sends to the first device.
+      required: false
+      example: "luwu_device_001"
+      selector:
+        text:
+    command:
+      name: Command
+      description: The command to send.
+      required: true
+      example: "move_forward"
+      selector:
+        text:
+    parameters:
+      name: Parameters
+      description: Additional parameters for the command.
+      required: false
+      example: '{"speed": 50, "duration": 1000}'
+      selector:
+        object:
+
+move_robot:
+  name: Move Robot
+  description: Control the robot movement.
+  fields:
+    device_id:
+      name: Device ID
+      description: The device ID to control. If not specified, controls the first device.
+      required: false
+      selector:
+        text:
+    direction:
+      name: Direction
+      description: The direction to move.
+      required: true
+      example: "forward"
+      selector:
+        select:
+          options:
+            - "forward"
+            - "backward"
+            - "left"
+            - "right"
+    speed:
+      name: Speed
+      description: Movement speed (0-100).
+      required: false
+      default: 50
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+    duration:
+      name: Duration
+      description: Duration in milliseconds. If not set, the robot will move until stopped.
+      required: false
+      selector:
+        number:
+          min: 100
+          max: 10000
+          step: 100
+          unit_of_measurement: ms
+
+execute_action:
+  name: Execute Action
+  description: Execute a predefined action on the robot.
+  fields:
+    device_id:
+      name: Device ID
+      description: The device ID to control. If not specified, controls the first device.
+      required: false
+      selector:
+        text:
+    action:
+      name: Action
+      description: The action to execute.
+      required: true
+      example: "grab"
+      selector:
+        select:
+          options:
+            - "grab"
+            - "release"
+            - "home"
+            - "stop"
+            - "patrol"
+            - "charge"
+    parameters:
+      name: Parameters
+      description: Additional parameters for the action.
+      required: false
+      selector:
+        object:
