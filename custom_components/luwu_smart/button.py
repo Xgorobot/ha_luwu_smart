@@ -28,33 +28,6 @@ from .entity import LuwuSmartEntity
 _LOGGER = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True, kw_only=True)
-class LuwuSmartActionButtonDescription(ButtonEntityDescription):
-    """Describes a Luwu Smart action button entity."""
-    
-    action: str
-
-
-@dataclass(frozen=True, kw_only=True)
-class LuwuSmartMoveButtonDescription(ButtonEntityDescription):
-    """Describes a Luwu Smart move button entity."""
-    
-    vx: int = 0
-    vyaw: int = 0
-
-
-# Generate action button descriptions for all 12 actions
-ACTION_BUTTON_DESCRIPTIONS: tuple[LuwuSmartActionButtonDescription, ...] = tuple(
-    LuwuSmartActionButtonDescription(
-        key=f"action_{action.lower()}",
-        translation_key=f"action_{action.lower()}",
-        action=action,
-        icon=_get_action_icon(action),
-    )
-    for action in PUPPY_ACTIONS
-)
-
-
 def _get_action_icon(action: str) -> str:
     """Get icon for action."""
     icons = {
@@ -73,6 +46,33 @@ def _get_action_icon(action: str) -> str:
         "Stop": "mdi:stop",
     }
     return icons.get(action, "mdi:dog")
+
+
+@dataclass(frozen=True, kw_only=True)
+class LuwuSmartActionButtonDescription(ButtonEntityDescription):
+    """Describes a Luwu Smart action button entity."""
+    
+    action: str
+
+
+@dataclass(frozen=True, kw_only=True)
+class LuwuSmartMoveButtonDescription(ButtonEntityDescription):
+    """Describes a Luwu Smart move button entity."""
+    
+    vx: int = 0
+    vyaw: int = 0
+
+
+# Generate action button descriptions for all 13 actions
+ACTION_BUTTON_DESCRIPTIONS: tuple[LuwuSmartActionButtonDescription, ...] = tuple(
+    LuwuSmartActionButtonDescription(
+        key=f"action_{action.lower()}",
+        translation_key=f"action_{action.lower()}",
+        action=action,
+        icon=_get_action_icon(action),
+    )
+    for action in PUPPY_ACTIONS
+)
 
 
 # Move button descriptions
