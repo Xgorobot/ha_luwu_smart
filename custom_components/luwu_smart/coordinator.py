@@ -16,6 +16,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .const import (
     API_CONTROL,
+    API_HA_CONFIG,
     API_SENSORS,
     API_STATUS,
     ATTR_COMMAND,
@@ -25,6 +26,7 @@ from .const import (
     CMD_LASER,
     CMD_MOVE,
     CONF_TOKEN,
+    CONF_HA_TOKEN,
     DEFAULT_PORT,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
@@ -48,8 +50,10 @@ class LuwuSmartDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._host = config_entry.data[CONF_HOST]
         self._port = config_entry.data.get(CONF_PORT, DEFAULT_PORT)
         self._token = config_entry.data.get(CONF_TOKEN)
+        self._ha_token = config_entry.data.get(CONF_HA_TOKEN)
         self._session = async_get_clientsession(hass)
         self._device_info: dict[str, Any] = {}
+        self._ha_config_sent = False
         
         super().__init__(
             hass,
@@ -94,6 +98,10 @@ class LuwuSmartDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     "sw_version": status_data.get("firmware_version"),
                     "hw_version": status_data.get("hardware_version"),
                 }
+                
+                # Send HA config on first successful update
+                if not self._ha_config_sent and self._ha_token:
+                    self._ha_config_sent = await self.send_ha_config()
                 
                 return {
                     "status": status_data,
@@ -172,3 +180,47 @@ class LuwuSmartDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     async def send_laser(self, on: bool) -> dict[str, Any]:
         """Send a laser command."""
         return await self.send_command(CMD_LASER, {"on": on})
+
+    async def send_ha_config(self) -> bool:
+        """Send HA config (IP, port, token) to device for event callbacks."""
+        if not self._ha_token:
+            _LOGGER.debug("No HA token configured, skipping HA config send")
+            return False
+        
+        # Get HA internal URL
+        ha_url = self.hass.config.internal_url or self.hass.config.external_url
+        if not ha_url:
+            # Fallback to local IP
+            ha_ip = self.hass.config.api.local_ip if self.hass.config.api else "127.0.0.1"
+            ha_port = 8123
+        else:
+            # Parse URL to get IP and port
+            from urllib.parse import urlparse
+            parsed = urlparse(ha_url)
+            ha_ip = parsed.hostname or "127.0.0.1"
+            ha_port = parsed.port or 8123
+        
+        url = f"{self.base_url}{API_HA_CONFIG}"
+        payload = {
+            "ha_ip": ha_ip,
+            "ha_port": ha_port,
+            "ha_token": self._ha_token,
+        }
+        
+        _LOGGER.debug("Sending HA config to device: %s:%d", ha_ip, ha_port)
+        
+        try:
+            async with asyncio.timeout(10):
+                async with self._session.post(
+                    url, json=payload, headers=self.headers
+                ) as response:
+                    if response.status == 200:
+                        result = await response.json()
+                        if result.get("success"):
+                            _LOGGER.info("HA config sent to device successfully")
+                            return True
+                    _LOGGER.warning("Failed to send HA config to device: %d", response.status)
+                    return False
+        except Exception as err:
+            _LOGGER.error("Error sending HA config to device: %s", err)
+            return False

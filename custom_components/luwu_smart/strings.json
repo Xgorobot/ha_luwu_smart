@@ -8,13 +8,15 @@
           "host": "Host",
           "port": "Port",
           "name": "Device Name",
-          "token": "API Token (optional)"
+          "token": "API Token (optional)",
+          "ha_token": "HA Long-Lived Access Token"
         },
         "data_description": {
           "host": "IP address of the device",
           "port": "Port number (default: 80)",
           "name": "A friendly name for the device",
-          "token": "Authentication token if required"
+          "token": "Authentication token if required",
+          "ha_token": "Home Assistant long-lived access token for smart home commands"
         }
       },
       "reauth_confirm": {

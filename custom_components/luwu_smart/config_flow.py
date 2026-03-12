@@ -17,6 +17,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import (
     CONF_TOKEN,
+    CONF_HA_TOKEN,
     DEFAULT_NAME,
     DEFAULT_PORT,
     DOMAIN,
@@ -31,6 +32,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Optional(CONF_PORT, default=DEFAULT_PORT): int,
         vol.Optional(CONF_NAME, default=DEFAULT_NAME): str,
         vol.Optional(CONF_TOKEN): str,
+        vol.Optional(CONF_HA_TOKEN): str,  # HA long-lived access token
     }
 )
 

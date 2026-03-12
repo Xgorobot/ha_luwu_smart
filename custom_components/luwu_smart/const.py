@@ -11,6 +11,7 @@ CONF_HOST: Final = "host"
 CONF_PORT: Final = "port"
 CONF_DEVICE_ID: Final = "device_id"
 CONF_TOKEN: Final = "token"
+CONF_HA_TOKEN: Final = "ha_token"  # HA long-lived access token for device to call HA
 
 # Default values
 DEFAULT_PORT: Final = 80
@@ -31,6 +32,7 @@ API_CONTROL: Final = "/api/control"
 API_SENSORS: Final = "/api/sensors"
 API_CAMERA_SNAPSHOT: Final = "/api/camera/snapshot"
 API_TTS: Final = "/api/tts"
+API_HA_CONFIG: Final = "/api/ha_config"  # Send HA config to device
 
 # Commands
 CMD_MOVE: Final = "move"

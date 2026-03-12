@@ -8,13 +8,15 @@
           "host": "主机地址",
           "port": "端口",
           "name": "设备名称",
-          "token": "API 令牌（可选）"
+          "token": "API 令牌（可选）",
+          "ha_token": "HA 长期访问令牌"
         },
         "data_description": {
           "host": "设备的 IP 地址",
           "port": "端口号（默认：80）",
           "name": "设备的友好名称",
-          "token": "如果需要认证，请输入令牌"
+          "token": "如果需要认证，请输入令牌",
+          "ha_token": "用于智能家居语音指令的 Home Assistant 长期访问令牌"
         }
       },
       "reauth_confirm": {
