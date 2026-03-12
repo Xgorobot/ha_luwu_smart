@@ -11,24 +11,34 @@ from homeassistant.helpers import device_registry as dr
 
 from .const import (
     API_CONTROL,
+    ATTR_ACTION,
     ATTR_COMMAND,
-    ATTR_DIRECTION,
-    ATTR_DURATION,
+    ATTR_EMOTION,
     ATTR_PARAMETERS,
-    ATTR_SPEED,
+    ATTR_TIME,
+    ATTR_VX,
+    ATTR_VYAW,
+    CMD_ACTION,
+    CMD_EMOTION,
+    CMD_MOVE,
+    DEFAULT_MOVE_SPEED,
+    DEFAULT_MOVE_TIME,
     DOMAIN,
     MANUFACTURER,
-    PLATFORMS,
+    MODEL,
+    PUPPY_ACTIONS,
+    PUPPY_EMOTIONS,
 )
 from .coordinator import LuwuSmartDataUpdateCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS_LIST: list[Platform] = [
+PLATFORMS: list[Platform] = [
     Platform.SENSOR,
     Platform.CAMERA,
     Platform.BUTTON,
     Platform.SWITCH,
+    Platform.SELECT,
 ]
 
 
@@ -50,16 +60,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         identifiers={(DOMAIN, coordinator.device_info.get("device_id", entry.data[CONF_HOST]))},
         manufacturer=MANUFACTURER,
         name=coordinator.device_info.get("name", entry.title),
-        model=coordinator.device_info.get("model", "Luwu Smart Device"),
+        model=coordinator.device_info.get("model", MODEL),
         sw_version=coordinator.device_info.get("sw_version"),
         hw_version=coordinator.device_info.get("hw_version"),
     )
     
     # Set up platforms
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS_LIST)
-    
-    # Start WebSocket connection for real-time updates
-    await coordinator.async_start_websocket()
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     
     # Register services
     await async_setup_services(hass)
@@ -69,13 +76,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    coordinator: LuwuSmartDataUpdateCoordinator = hass.data[DOMAIN][entry.entry_id]
-    
-    # Stop WebSocket
-    await coordinator.async_stop_websocket()
-    
     # Unload platforms
-    if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS_LIST):
+    if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
         hass.data[DOMAIN].pop(entry.entry_id)
     
     # Unregister services if no more entries
@@ -96,45 +98,60 @@ async def async_setup_services(hass: HomeAssistant) -> None:
         
         coordinator = _get_coordinator_by_device_id(hass, device_id)
         if coordinator:
-            await coordinator.send_command(API_CONTROL, command, parameters)
-    
-    async def handle_move_robot(call: ServiceCall) -> None:
-        """Handle the move_robot service call."""
-        device_id = call.data.get("device_id")
-        direction = call.data[ATTR_DIRECTION]
-        speed = call.data.get(ATTR_SPEED, 50)
-        duration = call.data.get(ATTR_DURATION)
-        
-        coordinator = _get_coordinator_by_device_id(hass, device_id)
-        if coordinator:
-            parameters = {"speed": speed}
-            if duration:
-                parameters["duration"] = duration
-            await coordinator.send_command(API_CONTROL, f"move_{direction}", parameters)
+            await coordinator.send_command(command, parameters)
     
     async def handle_execute_action(call: ServiceCall) -> None:
         """Handle the execute_action service call."""
         device_id = call.data.get("device_id")
-        action = call.data.get("action")
-        parameters = call.data.get(ATTR_PARAMETERS, {})
+        action = call.data[ATTR_ACTION]
+        
+        if action not in PUPPY_ACTIONS:
+            _LOGGER.warning("Invalid action: %s", action)
+            return
         
         coordinator = _get_coordinator_by_device_id(hass, device_id)
         if coordinator:
-            await coordinator.send_command(API_CONTROL, action, parameters)
+            await coordinator.send_action(action)
+    
+    async def handle_set_emotion(call: ServiceCall) -> None:
+        """Handle the set_emotion service call."""
+        device_id = call.data.get("device_id")
+        emotion = call.data[ATTR_EMOTION]
+        
+        if emotion not in PUPPY_EMOTIONS:
+            _LOGGER.warning("Invalid emotion: %s", emotion)
+            return
+        
+        coordinator = _get_coordinator_by_device_id(hass, device_id)
+        if coordinator:
+            await coordinator.send_emotion(emotion)
+    
+    async def handle_move_robot(call: ServiceCall) -> None:
+        """Handle the move_robot service call."""
+        device_id = call.data.get("device_id")
+        vx = call.data.get(ATTR_VX, 0)
+        vyaw = call.data.get(ATTR_VYAW, 0)
+        time_ms = call.data.get(ATTR_TIME, DEFAULT_MOVE_TIME)
+        
+        coordinator = _get_coordinator_by_device_id(hass, device_id)
+        if coordinator:
+            await coordinator.send_move(vx=vx, vyaw=vyaw, time_ms=time_ms)
     
     # Only register if not already registered
     if not hass.services.has_service(DOMAIN, "send_command"):
         hass.services.async_register(DOMAIN, "send_command", handle_send_command)
-        hass.services.async_register(DOMAIN, "move_robot", handle_move_robot)
         hass.services.async_register(DOMAIN, "execute_action", handle_execute_action)
+        hass.services.async_register(DOMAIN, "set_emotion", handle_set_emotion)
+        hass.services.async_register(DOMAIN, "move_robot", handle_move_robot)
 
 
 async def async_unload_services(hass: HomeAssistant) -> None:
     """Unload Luwu Smart services."""
     if hass.services.has_service(DOMAIN, "send_command"):
         hass.services.async_remove(DOMAIN, "send_command")
-        hass.services.async_remove(DOMAIN, "move_robot")
         hass.services.async_remove(DOMAIN, "execute_action")
+        hass.services.async_remove(DOMAIN, "set_emotion")
+        hass.services.async_remove(DOMAIN, "move_robot")
 
 
 def _get_coordinator_by_device_id(

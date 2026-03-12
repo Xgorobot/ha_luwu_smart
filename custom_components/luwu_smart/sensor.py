@@ -13,8 +13,8 @@ from homeassistant.components.sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     PERCENTAGE,
+    SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
     UnitOfTemperature,
-    UnitOfLength,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -22,10 +22,9 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import (
     DOMAIN,
     SENSOR_BATTERY,
-    SENSOR_DISTANCE,
-    SENSOR_HUMIDITY,
-    SENSOR_STATUS,
+    SENSOR_STATE,
     SENSOR_TEMPERATURE,
+    SENSOR_WIFI_RSSI,
 )
 from .coordinator import LuwuSmartDataUpdateCoordinator
 from .entity import LuwuSmartEntity
@@ -35,17 +34,32 @@ from .entity import LuwuSmartEntity
 class LuwuSmartSensorEntityDescription(SensorEntityDescription):
     """Describes a Luwu Smart sensor entity."""
     
-    value_fn: str  # Key path in sensor data
+    value_key: str  # Key in coordinator data
 
 
 SENSOR_DESCRIPTIONS: tuple[LuwuSmartSensorEntityDescription, ...] = (
+    LuwuSmartSensorEntityDescription(
+        key=SENSOR_STATE,
+        translation_key="state",
+        icon="mdi:dog",
+        value_key="state",
+    ),
+    LuwuSmartSensorEntityDescription(
+        key=SENSOR_WIFI_RSSI,
+        translation_key="wifi_rssi",
+        native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+        device_class=SensorDeviceClass.SIGNAL_STRENGTH,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:wifi",
+        value_key="wifi_rssi",
+    ),
     LuwuSmartSensorEntityDescription(
         key=SENSOR_BATTERY,
         translation_key="battery",
         native_unit_of_measurement=PERCENTAGE,
         device_class=SensorDeviceClass.BATTERY,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn="battery",
+        value_key="battery",
     ),
     LuwuSmartSensorEntityDescription(
         key=SENSOR_TEMPERATURE,
@@ -53,29 +67,7 @@ SENSOR_DESCRIPTIONS: tuple[LuwuSmartSensorEntityDescription, ...] = (
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
-        value_fn="temperature",
-    ),
-    LuwuSmartSensorEntityDescription(
-        key=SENSOR_HUMIDITY,
-        translation_key="humidity",
-        native_unit_of_measurement=PERCENTAGE,
-        device_class=SensorDeviceClass.HUMIDITY,
-        state_class=SensorStateClass.MEASUREMENT,
-        value_fn="humidity",
-    ),
-    LuwuSmartSensorEntityDescription(
-        key=SENSOR_DISTANCE,
-        translation_key="distance",
-        native_unit_of_measurement=UnitOfLength.CENTIMETERS,
-        device_class=SensorDeviceClass.DISTANCE,
-        state_class=SensorStateClass.MEASUREMENT,
-        value_fn="distance",
-    ),
-    LuwuSmartSensorEntityDescription(
-        key=SENSOR_STATUS,
-        translation_key="status",
-        device_class=None,
-        value_fn="status",
+        value_key="temperature",
     ),
 )
 
@@ -90,19 +82,29 @@ async def async_setup_entry(
     
     entities: list[LuwuSmartSensor] = []
     
-    # Get available sensors from device data
-    sensor_data = coordinator.data.get("sensors", {}) if coordinator.data else {}
-    status_data = coordinator.data.get("status", {}) if coordinator.data else {}
-    
     for description in SENSOR_DESCRIPTIONS:
-        # Check if this sensor is available from the device
-        if description.value_fn in sensor_data or description.value_fn in status_data:
-            entities.append(LuwuSmartSensor(coordinator, description))
+        # Skip battery and temperature if they return -1 (not available)
+        if description.value_key in ("battery", "temperature"):
+            value = coordinator.data.get(description.value_key) if coordinator.data else None
+            if value is None or value == -1:
+                continue
+        entities.append(LuwuSmartSensor(coordinator, description))
     
-    # If no sensors found, add default ones
-    if not entities:
-        for description in SENSOR_DESCRIPTIONS:
-            entities.append(LuwuSmartSensor(coordinator, description))
+    # Always add state and wifi_rssi sensors
+    if not any(e.entity_description.key == SENSOR_STATE for e in entities):
+        entities.append(
+            LuwuSmartSensor(
+                coordinator,
+                next(d for d in SENSOR_DESCRIPTIONS if d.key == SENSOR_STATE),
+            )
+        )
+    if not any(e.entity_description.key == SENSOR_WIFI_RSSI for e in entities):
+        entities.append(
+            LuwuSmartSensor(
+                coordinator,
+                next(d for d in SENSOR_DESCRIPTIONS if d.key == SENSOR_WIFI_RSSI),
+            )
+        )
     
     async_add_entities(entities)
 
@@ -127,13 +129,11 @@ class LuwuSmartSensor(LuwuSmartEntity, SensorEntity):
         if not self.coordinator.data:
             return None
         
-        # Try to get value from sensors first, then status
-        sensors = self.coordinator.data.get("sensors", {})
-        status = self.coordinator.data.get("status", {})
+        value = self.coordinator.data.get(self.entity_description.value_key)
         
-        value = sensors.get(self.entity_description.value_fn)
-        if value is None:
-            value = status.get(self.entity_description.value_fn)
+        # Return None for unavailable values (-1)
+        if value == -1:
+            return None
         
         return value
 
@@ -142,11 +142,16 @@ class LuwuSmartSensor(LuwuSmartEntity, SensorEntity):
         """Return additional state attributes."""
         attrs: dict[str, Any] = {}
         
-        if self.coordinator.data:
-            sensors = self.coordinator.data.get("sensors", {})
-            # Add any related attributes
-            if self.entity_description.key == SENSOR_STATUS:
-                attrs["last_action"] = sensors.get("last_action")
-                attrs["error_code"] = sensors.get("error_code")
+        if self.entity_description.key == SENSOR_STATE:
+            # Add state translation
+            state_translations = {
+                "idle": "空闲",
+                "listening": "聆听中",
+                "speaking": "说话中",
+            }
+            if self.coordinator.data:
+                state = self.coordinator.data.get("state")
+                if state:
+                    attrs["state_zh"] = state_translations.get(state, state)
         
         return attrs

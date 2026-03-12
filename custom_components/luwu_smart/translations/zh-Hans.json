@@ -2,8 +2,8 @@
   "config": {
     "step": {
       "user": {
-        "title": "陆吾智能设备",
-        "description": "设置您的陆吾智能具身智能设备。",
+        "title": "RIG-Puppy 机器狗",
+        "description": "设置您的陆吾智能 RIG-Puppy 机器狗。",
         "data": {
           "host": "主机地址",
           "port": "端口",
@@ -11,8 +11,8 @@
           "token": "API 令牌（可选）"
         },
         "data_description": {
-          "host": "设备的 IP 地址或主机名",
-          "port": "端口号（默认：8080）",
+          "host": "设备的 IP 地址",
+          "port": "端口号（默认：80）",
           "name": "设备的友好名称",
           "token": "如果需要认证，请输入令牌"
         }
@@ -35,32 +35,19 @@
       "reauth_successful": "重新认证成功。"
     }
   },
-  "options": {
-    "step": {
-      "init": {
-        "title": "陆吾智能选项",
-        "data": {
-          "scan_interval": "更新间隔（秒）"
-        }
-      }
-    }
-  },
   "entity": {
     "sensor": {
+      "state": {
+        "name": "设备状态"
+      },
+      "wifi_rssi": {
+        "name": "WiFi 信号强度"
+      },
       "battery": {
         "name": "电池"
       },
       "temperature": {
         "name": "温度"
-      },
-      "humidity": {
-        "name": "湿度"
-      },
-      "distance": {
-        "name": "距离"
-      },
-      "status": {
-        "name": "状态"
       }
     },
     "camera": {
@@ -69,87 +56,104 @@
       }
     },
     "button": {
-      "move_forward": {
-        "name": "向前移动"
+      "action_wave": {
+        "name": "招手"
       },
-      "move_backward": {
-        "name": "向后移动"
+      "action_sit": {
+        "name": "坐下"
       },
-      "turn_left": {
-        "name": "左转"
+      "action_stretch": {
+        "name": "伸展"
       },
-      "turn_right": {
-        "name": "右转"
+      "action_naughty": {
+        "name": "调皮"
       },
-      "stop": {
+      "action_swing": {
+        "name": "摇摆"
+      },
+      "action_lookup": {
+        "name": "抬头"
+      },
+      "action_rolling": {
+        "name": "打滚"
+      },
+      "action_angry": {
+        "name": "生气"
+      },
+      "action_swimming": {
+        "name": "游泳"
+      },
+      "action_pee": {
+        "name": "撒尿"
+      },
+      "action_bouncing": {
+        "name": "蹦跳"
+      },
+      "action_shaking": {
+        "name": "抖动"
+      },
+      "action_stop": {
         "name": "停止"
       },
-      "grab": {
-        "name": "抓取"
+      "move_forward": {
+        "name": "前进"
       },
-      "release": {
-        "name": "释放"
+      "move_backward": {
+        "name": "后退"
       },
-      "home": {
-        "name": "回家"
+      "move_left": {
+        "name": "左转"
+      },
+      "move_right": {
+        "name": "右转"
+      },
+      "move_stop": {
+        "name": "停止移动"
       }
     },
     "switch": {
-      "power": {
-        "name": "电源"
-      },
-      "auto_mode": {
-        "name": "自动模式"
-      },
-      "voice": {
-        "name": "语音"
+      "laser": {
+        "name": "激光"
+      }
+    },
+    "select": {
+      "emotion": {
+        "name": "表情",
+        "state": {
+          "neutral": "正常",
+          "happy": "开心",
+          "sad": "伤心",
+          "angry": "生气",
+          "surprised": "惊讶",
+          "sleepy": "困倦",
+          "excited": "兴奋",
+          "confused": "困惑"
+        }
       }
     }
   },
   "services": {
     "send_command": {
       "name": "发送命令",
-      "description": "向陆吾智能设备发送自定义命令。",
-      "fields": {
-        "device_id": {
-          "name": "设备 ID",
-          "description": "目标设备的 ID。如果未指定，则发送到第一个设备。"
-        },
-        "command": {
-          "name": "命令",
-          "description": "要发送的命令。"
-        },
-        "parameters": {
-          "name": "参数",
-          "description": "命令的附加参数。"
-        }
-      }
-    },
-    "move_robot": {
-      "name": "移动机器人",
-      "description": "控制机器人移动。",
+      "description": "向设备发送自定义命令。",
       "fields": {
         "device_id": {
           "name": "设备 ID",
           "description": "目标设备的 ID。"
         },
-        "direction": {
-          "name": "方向",
-          "description": "移动方向。"
+        "command": {
+          "name": "命令",
+          "description": "要发送的命令（move, action, emotion, laser）。"
         },
-        "speed": {
-          "name": "速度",
-          "description": "移动速度（0-100）。"
-        },
-        "duration": {
-          "name": "持续时间",
-          "description": "持续时间（毫秒）。如果未设置，机器人将持续移动直到停止。"
+        "parameters": {
+          "name": "参数",
+          "description": "命令参数（JSON 对象）。"
         }
       }
     },
     "execute_action": {
       "name": "执行动作",
-      "description": "在机器人上执行预定义的动作。",
+      "description": "执行预定义的动作。",
       "fields": {
         "device_id": {
           "name": "设备 ID",
@@ -158,10 +162,42 @@
         "action": {
           "name": "动作",
           "description": "要执行的动作。"
+        }
+      }
+    },
+    "set_emotion": {
+      "name": "设置表情",
+      "description": "设置机器狗的表情。",
+      "fields": {
+        "device_id": {
+          "name": "设备 ID",
+          "description": "目标设备的 ID。"
         },
-        "parameters": {
-          "name": "参数",
-          "description": "动作的附加参数。"
+        "emotion": {
+          "name": "表情",
+          "description": "要显示的表情。"
+        }
+      }
+    },
+    "move_robot": {
+      "name": "移动机器狗",
+      "description": "控制机器狗移动。",
+      "fields": {
+        "device_id": {
+          "name": "设备 ID",
+          "description": "目标设备的 ID。"
+        },
+        "vx": {
+          "name": "前进速度",
+          "description": "前进/后退速度（-100 到 100）。正数为前进。"
+        },
+        "vyaw": {
+          "name": "转向速度",
+          "description": "转向速度（-100 到 100）。正数为左转。"
+        },
+        "time": {
+          "name": "持续时间",
+          "description": "移动持续时间（毫秒）。"
         }
       }
     }

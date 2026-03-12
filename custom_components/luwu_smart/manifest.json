@@ -5,9 +5,9 @@
   "config_flow": true,
   "dependencies": [],
   "documentation": "https://github.com/LuwuDynamics/ha-luwu-smart",
-  "iot_class": "local_push",
+  "iot_class": "local_polling",
   "issue_tracker": "https://github.com/LuwuDynamics/ha-luwu-smart/issues",
   "requirements": ["aiohttp>=3.8.0"],
   "version": "1.0.0",
-  "integration_type": "hub"
+  "integration_type": "device"
 }

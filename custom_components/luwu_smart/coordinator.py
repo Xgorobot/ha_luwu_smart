@@ -15,14 +15,19 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
+    API_CONTROL,
     API_SENSORS,
     API_STATUS,
-    API_WEBSOCKET,
+    ATTR_COMMAND,
+    ATTR_PARAMETERS,
+    CMD_ACTION,
+    CMD_EMOTION,
+    CMD_LASER,
+    CMD_MOVE,
     CONF_TOKEN,
     DEFAULT_PORT,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
-    EVENT_STATE_CHANGED,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -44,8 +49,6 @@ class LuwuSmartDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._port = config_entry.data.get(CONF_PORT, DEFAULT_PORT)
         self._token = config_entry.data.get(CONF_TOKEN)
         self._session = async_get_clientsession(hass)
-        self._websocket: aiohttp.ClientWebSocketResponse | None = None
-        self._ws_task: asyncio.Task | None = None
         self._device_info: dict[str, Any] = {}
         
         super().__init__(
@@ -59,11 +62,6 @@ class LuwuSmartDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def base_url(self) -> str:
         """Return the base URL for API requests."""
         return f"http://{self._host}:{self._port}"
-
-    @property
-    def ws_url(self) -> str:
-        """Return the WebSocket URL."""
-        return f"ws://{self._host}:{self._port}{API_WEBSOCKET}"
 
     @property
     def headers(self) -> dict[str, str]:
@@ -88,19 +86,24 @@ class LuwuSmartDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 # Get sensor data
                 sensor_data = await self._fetch_sensors()
                 
-                # Update device info
+                # Update device info from status response
                 self._device_info = {
                     "device_id": status_data.get("device_id", self._host),
-                    "name": status_data.get("name", "Luwu Smart Device"),
-                    "model": status_data.get("model", "Unknown"),
-                    "sw_version": status_data.get("firmware_version", "Unknown"),
-                    "hw_version": status_data.get("hardware_version", "Unknown"),
+                    "name": status_data.get("name", "RIG-Puppy"),
+                    "model": status_data.get("model", "LULU-ESP32S3"),
+                    "sw_version": status_data.get("firmware_version"),
+                    "hw_version": status_data.get("hardware_version"),
                 }
                 
                 return {
                     "status": status_data,
                     "sensors": sensor_data,
                     "online": True,
+                    # Extract commonly used values
+                    "state": status_data.get("state", "idle"),
+                    "wifi_rssi": status_data.get("wifi_rssi"),
+                    "battery": sensor_data.get("battery", -1),
+                    "temperature": sensor_data.get("temperature", -1),
                 }
         except asyncio.TimeoutError as err:
             raise UpdateFailed(f"Timeout communicating with device: {err}") from err
@@ -126,13 +129,15 @@ class LuwuSmartDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return {}
 
     async def send_command(
-        self, endpoint: str, command: str, parameters: dict[str, Any] | None = None
+        self, command: str, parameters: dict[str, Any] | None = None
     ) -> dict[str, Any]:
-        """Send a command to the device."""
-        url = f"{self.base_url}{endpoint}"
-        payload = {"command": command}
+        """Send a control command to the device."""
+        url = f"{self.base_url}{API_CONTROL}"
+        payload: dict[str, Any] = {ATTR_COMMAND: command}
         if parameters:
-            payload["parameters"] = parameters
+            payload[ATTR_PARAMETERS] = parameters
+        
+        _LOGGER.debug("Sending command: %s with parameters: %s", command, parameters)
         
         try:
             async with asyncio.timeout(10):
@@ -148,70 +153,22 @@ class LuwuSmartDataUpdateCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             _LOGGER.error("Error sending command: %s", err)
             raise
 
-    async def async_start_websocket(self) -> None:
-        """Start the WebSocket connection for real-time updates."""
-        if self._ws_task is not None:
-            return
-        
-        self._ws_task = self.hass.async_create_task(self._websocket_handler())
+    async def send_action(self, action: str) -> dict[str, Any]:
+        """Send an action command."""
+        return await self.send_command(CMD_ACTION, {"action": action})
 
-    async def async_stop_websocket(self) -> None:
-        """Stop the WebSocket connection."""
-        if self._ws_task is not None:
-            self._ws_task.cancel()
-            self._ws_task = None
-        
-        if self._websocket is not None:
-            await self._websocket.close()
-            self._websocket = None
+    async def send_emotion(self, emotion: str) -> dict[str, Any]:
+        """Send an emotion command."""
+        return await self.send_command(CMD_EMOTION, {"emotion": emotion})
 
-    async def _websocket_handler(self) -> None:
-        """Handle WebSocket connection and messages."""
-        retry_delay = 5
-        
-        while True:
-            try:
-                _LOGGER.debug("Connecting to WebSocket: %s", self.ws_url)
-                
-                async with self._session.ws_connect(
-                    self.ws_url, headers=self.headers
-                ) as ws:
-                    self._websocket = ws
-                    _LOGGER.info("WebSocket connected to %s", self._host)
-                    retry_delay = 5  # Reset retry delay on successful connection
-                    
-                    async for msg in ws:
-                        if msg.type == aiohttp.WSMsgType.TEXT:
-                            try:
-                                data = msg.json()
-                                await self._handle_ws_message(data)
-                            except ValueError:
-                                _LOGGER.warning("Invalid JSON in WebSocket message")
-                        elif msg.type == aiohttp.WSMsgType.ERROR:
-                            _LOGGER.error("WebSocket error: %s", ws.exception())
-                            break
-                        elif msg.type == aiohttp.WSMsgType.CLOSED:
-                            _LOGGER.info("WebSocket closed")
-                            break
-                            
-            except aiohttp.ClientError as err:
-                _LOGGER.warning("WebSocket connection failed: %s", err)
-            except asyncio.CancelledError:
-                _LOGGER.debug("WebSocket handler cancelled")
-                break
-            
-            self._websocket = None
-            _LOGGER.debug("Reconnecting WebSocket in %s seconds", retry_delay)
-            await asyncio.sleep(retry_delay)
-            retry_delay = min(retry_delay * 2, 60)  # Exponential backoff, max 60s
+    async def send_move(
+        self, vx: int = 0, vyaw: int = 0, time_ms: int = 500
+    ) -> dict[str, Any]:
+        """Send a move command."""
+        return await self.send_command(
+            CMD_MOVE, {"vx": vx, "vyaw": vyaw, "time": time_ms}
+        )
 
-    async def _handle_ws_message(self, data: dict[str, Any]) -> None:
-        """Handle incoming WebSocket message."""
-        event_type = data.get("event")
-        
-        if event_type == EVENT_STATE_CHANGED:
-            # Update coordinator data with new state
-            _LOGGER.debug("State changed event: %s", data)
-            await self.async_request_refresh()
-        else:
-            _LOGGER.debug("Unknown WebSocket event: %s", event_type)
+    async def send_laser(self, on: bool) -> dict[str, Any]:
+        """Send a laser command."""
+        return await self.send_command(CMD_LASER, {"on": on})

@@ -13,54 +13,116 @@ CONF_DEVICE_ID: Final = "device_id"
 CONF_TOKEN: Final = "token"
 
 # Default values
-DEFAULT_PORT: Final = 8080
-DEFAULT_NAME: Final = "Luwu Smart Device"
+DEFAULT_PORT: Final = 80
+DEFAULT_NAME: Final = "RIG-Puppy"
 DEFAULT_SCAN_INTERVAL: Final = 30
 
 # Device info
 MANUFACTURER: Final = "陆吾智能"
 MANUFACTURER_EN: Final = "Luwu Dynamics"
+MODEL: Final = "LULU-ESP32S3"
 
 # Platforms
-PLATFORMS: Final = ["sensor", "camera", "button", "switch"]
-
-# Sensor types
-SENSOR_BATTERY: Final = "battery"
-SENSOR_TEMPERATURE: Final = "temperature"
-SENSOR_HUMIDITY: Final = "humidity"
-SENSOR_DISTANCE: Final = "distance"
-SENSOR_STATUS: Final = "status"
-
-# Robot actions
-ACTION_MOVE_FORWARD: Final = "move_forward"
-ACTION_MOVE_BACKWARD: Final = "move_backward"
-ACTION_TURN_LEFT: Final = "turn_left"
-ACTION_TURN_RIGHT: Final = "turn_right"
-ACTION_STOP: Final = "stop"
-ACTION_GRAB: Final = "grab"
-ACTION_RELEASE: Final = "release"
-ACTION_HOME: Final = "home"
-
-# Switch types
-SWITCH_POWER: Final = "power"
-SWITCH_AUTO_MODE: Final = "auto_mode"
-SWITCH_VOICE: Final = "voice"
-
-# WebSocket events
-EVENT_STATE_CHANGED: Final = "state_changed"
-EVENT_CONNECTED: Final = "connected"
-EVENT_DISCONNECTED: Final = "disconnected"
+PLATFORMS: Final = ["sensor", "camera", "button", "switch", "select"]
 
 # API endpoints
 API_STATUS: Final = "/api/status"
 API_CONTROL: Final = "/api/control"
 API_SENSORS: Final = "/api/sensors"
-API_CAMERA: Final = "/api/camera"
-API_WEBSOCKET: Final = "/ws"
+API_CAMERA_SNAPSHOT: Final = "/api/camera/snapshot"
+API_TTS: Final = "/api/tts"
+
+# Commands
+CMD_MOVE: Final = "move"
+CMD_ACTION: Final = "action"
+CMD_EMOTION: Final = "emotion"
+CMD_LASER: Final = "laser"
+
+# Puppy actions (12 actions)
+PUPPY_ACTIONS: Final = [
+    "Wave",
+    "Sit", 
+    "Stretch",
+    "Naughty",
+    "Swing",
+    "Lookup",
+    "Rolling",
+    "Angry",
+    "Swimming",
+    "Pee",
+    "Bouncing",
+    "Shaking",
+    "Stop",
+]
+
+# Puppy emotions (8 emotions)
+PUPPY_EMOTIONS: Final = [
+    "neutral",
+    "happy",
+    "sad",
+    "angry",
+    "surprised",
+    "sleepy",
+    "excited",
+    "confused",
+]
+
+# Movement directions
+MOVE_FORWARD: Final = "forward"
+MOVE_BACKWARD: Final = "backward"
+MOVE_LEFT: Final = "left"
+MOVE_RIGHT: Final = "right"
+MOVE_STOP: Final = "stop"
+
+# Default movement parameters
+DEFAULT_MOVE_SPEED: Final = 50
+DEFAULT_MOVE_TIME: Final = 500
+
+# Sensor types
+SENSOR_STATE: Final = "state"
+SENSOR_WIFI_RSSI: Final = "wifi_rssi"
+SENSOR_BATTERY: Final = "battery"
+SENSOR_TEMPERATURE: Final = "temperature"
+
+# Device states
+STATE_IDLE: Final = "idle"
+STATE_LISTENING: Final = "listening"
+STATE_SPEAKING: Final = "speaking"
 
 # Attributes
 ATTR_COMMAND: Final = "command"
 ATTR_PARAMETERS: Final = "parameters"
-ATTR_SPEED: Final = "speed"
-ATTR_DIRECTION: Final = "direction"
-ATTR_DURATION: Final = "duration"
+ATTR_ACTION: Final = "action"
+ATTR_EMOTION: Final = "emotion"
+ATTR_VX: Final = "vx"
+ATTR_VYAW: Final = "vyaw"
+ATTR_TIME: Final = "time"
+
+# Action name translations (for display)
+ACTION_TRANSLATIONS: Final = {
+    "Wave": "招手",
+    "Sit": "坐下",
+    "Stretch": "伸展",
+    "Naughty": "调皮",
+    "Swing": "摇摆",
+    "Lookup": "抬头",
+    "Rolling": "打滚",
+    "Angry": "生气",
+    "Swimming": "游泳",
+    "Pee": "撒尿",
+    "Bouncing": "蹦跳",
+    "Shaking": "抖动",
+    "Stop": "停止",
+}
+
+# Emotion translations (for display)
+EMOTION_TRANSLATIONS: Final = {
+    "neutral": "正常",
+    "happy": "开心",
+    "sad": "伤心",
+    "angry": "生气",
+    "surprised": "惊讶",
+    "sleepy": "困倦",
+    "excited": "兴奋",
+    "confused": "困惑",
+}

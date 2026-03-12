@@ -63,7 +63,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
                 result = await response.json()
                 device_id = result.get("device_id", host)
                 device_name = result.get("name", data.get(CONF_NAME, DEFAULT_NAME))
-                model = result.get("model", "Luwu Smart Device")
+                model = result.get("model", "LULU-ESP32S3")
                 
     except asyncio.TimeoutError as err:
         raise CannotConnect from err

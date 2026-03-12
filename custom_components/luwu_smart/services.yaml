@@ -6,66 +6,28 @@ send_command:
       name: Device ID
       description: The device ID to send the command to. If not specified, sends to the first device.
       required: false
-      example: "luwu_device_001"
+      example: "puppy_xxxx"
       selector:
         text:
     command:
       name: Command
-      description: The command to send.
+      description: The command to send (move, action, emotion, laser).
       required: true
-      example: "move_forward"
-      selector:
-        text:
-    parameters:
-      name: Parameters
-      description: Additional parameters for the command.
-      required: false
-      example: '{"speed": 50, "duration": 1000}'
-      selector:
-        object:
-
-move_robot:
-  name: Move Robot
-  description: Control the robot movement.
-  fields:
-    device_id:
-      name: Device ID
-      description: The device ID to control. If not specified, controls the first device.
-      required: false
-      selector:
-        text:
-    direction:
-      name: Direction
-      description: The direction to move.
-      required: true
-      example: "forward"
+      example: "action"
       selector:
         select:
           options:
-            - "forward"
-            - "backward"
-            - "left"
-            - "right"
-    speed:
-      name: Speed
-      description: Movement speed (0-100).
+            - "move"
+            - "action"
+            - "emotion"
+            - "laser"
+    parameters:
+      name: Parameters
+      description: Command parameters as a JSON object.
       required: false
-      default: 50
+      example: '{"action": "Wave"}'
       selector:
-        number:
-          min: 0
-          max: 100
-          step: 1
-    duration:
-      name: Duration
-      description: Duration in milliseconds. If not set, the robot will move until stopped.
-      required: false
-      selector:
-        number:
-          min: 100
-          max: 10000
-          step: 100
-          unit_of_measurement: ms
+        object:
 
 execute_action:
   name: Execute Action
@@ -73,7 +35,7 @@ execute_action:
   fields:
     device_id:
       name: Device ID
-      description: The device ID to control. If not specified, controls the first device.
+      description: The device ID to control.
       required: false
       selector:
         text:
@@ -81,19 +43,89 @@ execute_action:
       name: Action
       description: The action to execute.
       required: true
-      example: "grab"
+      example: "Wave"
       selector:
         select:
           options:
-            - "grab"
-            - "release"
-            - "home"
-            - "stop"
-            - "patrol"
-            - "charge"
-    parameters:
-      name: Parameters
-      description: Additional parameters for the action.
+            - "Wave"
+            - "Sit"
+            - "Stretch"
+            - "Naughty"
+            - "Swing"
+            - "Lookup"
+            - "Rolling"
+            - "Angry"
+            - "Swimming"
+            - "Pee"
+            - "Bouncing"
+            - "Shaking"
+            - "Stop"
+
+set_emotion:
+  name: Set Emotion
+  description: Set the robot's emotion/expression.
+  fields:
+    device_id:
+      name: Device ID
+      description: The device ID to control.
       required: false
       selector:
-        object:
+        text:
+    emotion:
+      name: Emotion
+      description: The emotion to display.
+      required: true
+      example: "happy"
+      selector:
+        select:
+          options:
+            - "neutral"
+            - "happy"
+            - "sad"
+            - "angry"
+            - "surprised"
+            - "sleepy"
+            - "excited"
+            - "confused"
+
+move_robot:
+  name: Move Robot
+  description: Control the robot movement.
+  fields:
+    device_id:
+      name: Device ID
+      description: The device ID to control.
+      required: false
+      selector:
+        text:
+    vx:
+      name: Forward Speed (vx)
+      description: Forward/backward speed (-100 to 100). Positive is forward.
+      required: false
+      default: 0
+      selector:
+        number:
+          min: -100
+          max: 100
+          step: 10
+    vyaw:
+      name: Turn Speed (vyaw)
+      description: Turn speed (-100 to 100). Positive is left turn.
+      required: false
+      default: 0
+      selector:
+        number:
+          min: -100
+          max: 100
+          step: 10
+    time:
+      name: Duration
+      description: Movement duration in milliseconds.
+      required: false
+      default: 500
+      selector:
+        number:
+          min: 100
+          max: 5000
+          step: 100
+          unit_of_measurement: ms

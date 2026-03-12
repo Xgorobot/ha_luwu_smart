@@ -2,8 +2,8 @@
   "config": {
     "step": {
       "user": {
-        "title": "Luwu Smart Device",
-        "description": "Set up your Luwu Smart embodied intelligence device.",
+        "title": "RIG-Puppy Robot Dog",
+        "description": "Set up your Luwu Smart RIG-Puppy robot dog.",
         "data": {
           "host": "Host",
           "port": "Port",
@@ -11,8 +11,8 @@
           "token": "API Token (optional)"
         },
         "data_description": {
-          "host": "IP address or hostname of the device",
-          "port": "Port number (default: 8080)",
+          "host": "IP address of the device",
+          "port": "Port number (default: 80)",
           "name": "A friendly name for the device",
           "token": "Authentication token if required"
         }
@@ -35,12 +35,99 @@
       "reauth_successful": "Re-authentication was successful."
     }
   },
-  "options": {
-    "step": {
-      "init": {
-        "title": "Luwu Smart Options",
-        "data": {
-          "scan_interval": "Update interval (seconds)"
+  "entity": {
+    "sensor": {
+      "state": {
+        "name": "Device State"
+      },
+      "wifi_rssi": {
+        "name": "WiFi Signal"
+      },
+      "battery": {
+        "name": "Battery"
+      },
+      "temperature": {
+        "name": "Temperature"
+      }
+    },
+    "camera": {
+      "camera": {
+        "name": "Camera"
+      }
+    },
+    "button": {
+      "action_wave": {
+        "name": "Wave"
+      },
+      "action_sit": {
+        "name": "Sit"
+      },
+      "action_stretch": {
+        "name": "Stretch"
+      },
+      "action_naughty": {
+        "name": "Naughty"
+      },
+      "action_swing": {
+        "name": "Swing"
+      },
+      "action_lookup": {
+        "name": "Lookup"
+      },
+      "action_rolling": {
+        "name": "Rolling"
+      },
+      "action_angry": {
+        "name": "Angry"
+      },
+      "action_swimming": {
+        "name": "Swimming"
+      },
+      "action_pee": {
+        "name": "Pee"
+      },
+      "action_bouncing": {
+        "name": "Bouncing"
+      },
+      "action_shaking": {
+        "name": "Shaking"
+      },
+      "action_stop": {
+        "name": "Stop"
+      },
+      "move_forward": {
+        "name": "Move Forward"
+      },
+      "move_backward": {
+        "name": "Move Backward"
+      },
+      "move_left": {
+        "name": "Turn Left"
+      },
+      "move_right": {
+        "name": "Turn Right"
+      },
+      "move_stop": {
+        "name": "Stop Moving"
+      }
+    },
+    "switch": {
+      "laser": {
+        "name": "Laser"
+      }
+    },
+    "select": {
+      "emotion": {
+        "name": "Emotion",
+        "state": {
+          "neutral": "Neutral",
+          "happy": "Happy",
+          "sad": "Sad",
+          "angry": "Angry",
+          "surprised": "Surprised",
+          "sleepy": "Sleepy",
+          "excited": "Excited",
+          "confused": "Confused"
         }
       }
     }
